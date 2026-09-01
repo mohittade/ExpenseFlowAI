@@ -12,10 +12,43 @@ DB_PATH = os.getenv("DATABASE_PATH", "expenseflow.db")
 
 
 def get_connection():
-    """Get a database connection."""
-    conn = sqlite3.connect(DB_PATH)
+    """Get a database connection with lock retry support for concurrent app usage."""
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout = 30000")
     return conn
+
+
+def _ensure_execution_logs_schema(cursor):
+    """Upgrade older execution_logs tables to the current schema."""
+    cursor.execute("PRAGMA table_info(execution_logs)")
+    columns = [row[1] for row in cursor.fetchall()]
+
+    if not columns:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS execution_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                agent_name TEXT NOT NULL,
+                action TEXT NOT NULL,
+                status TEXT NOT NULL,
+                details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        return
+
+    for column_name, column_sql in {
+        "run_id": "ALTER TABLE execution_logs ADD COLUMN run_id TEXT NOT NULL DEFAULT 'legacy'",
+        "agent_name": "ALTER TABLE execution_logs ADD COLUMN agent_name TEXT NOT NULL DEFAULT 'unknown'",
+        "action": "ALTER TABLE execution_logs ADD COLUMN action TEXT NOT NULL DEFAULT 'unknown'",
+        "status": "ALTER TABLE execution_logs ADD COLUMN status TEXT NOT NULL DEFAULT 'unknown'",
+        "details": "ALTER TABLE execution_logs ADD COLUMN details TEXT",
+        "created_at": "ALTER TABLE execution_logs ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+    }.items():
+        if column_name not in columns:
+            cursor.execute(column_sql)
 
 
 def init_database():
@@ -59,18 +92,8 @@ def init_database():
         )
     """)
 
-    # Create execution_logs table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS execution_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            run_id TEXT NOT NULL,
-            agent_name TEXT NOT NULL,
-            action TEXT NOT NULL,
-            status TEXT NOT NULL,
-            details TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+    # Create execution_logs table and migrate older versions
+    _ensure_execution_logs_schema(cursor)
 
     conn.commit()
 

