@@ -6,15 +6,22 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
-DB_PATH = os.getenv("DATABASE_PATH", "expenseflow.db")
+DB_PATH = os.getenv("DATABASE_PATH")
+if DB_PATH and os.path.isabs(DB_PATH):
+    DB_PATH = str(Path(DB_PATH))
+else:
+    DB_PATH = str(PROJECT_ROOT / "expenseflow.db")
 
 
 def get_connection():
     """Get a database connection."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout = 30000")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 
@@ -68,6 +75,21 @@ def init_database():
             action TEXT NOT NULL,
             status TEXT NOT NULL,
             details TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Create reports table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL UNIQUE,
+            employee_id INTEGER NOT NULL,
+            period_start TEXT NOT NULL,
+            period_end TEXT NOT NULL,
+            total_amount REAL NOT NULL,
+            pdf_path TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)

@@ -132,7 +132,7 @@ def display_expense_summary(result):
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Grand Total", f"${summary.get('grand_total', 0):,.2f}")
+        st.metric("Grand Total", f"₹{summary.get('grand_total', 0):,.2f}")
     with col2:
         st.metric("Transactions", summary.get('expense_count', 0))
     with col3:
@@ -149,7 +149,7 @@ def display_expense_summary(result):
             breakdown_data.append({
                 "Category": item['category'],
                 "Count": item['count'],
-                "Total": f"${item['total']:,.2f}",
+                "Total": f"₹{item['total']:,.2f}",
                 "% of Total": f"{item['percentage']:.1f}%"
             })
         st.dataframe(breakdown_data, use_container_width=True, hide_index=True)
@@ -170,7 +170,7 @@ def display_expense_details(result):
             "Date": exp.get('date', ''),
             "Merchant": exp.get('merchant', ''),
             "Category": exp.get('category') or "⚠️ Uncategorized",
-            "Amount": f"${exp.get('amount', 0):,.2f}",
+            "Amount": f"₹{exp.get('amount', 0):,.2f}",
             "Description": exp.get('description') or "⚠️ Missing",
             "Receipt": "✅" if exp.get('receipt_path') else "❌ Missing"
         })
@@ -194,9 +194,9 @@ def display_policy_violations(result):
             "Date": v.get('date', ''),
             "Merchant": v.get('merchant', ''),
             "Category": v.get('category', ''),
-            "Amount": f"${v.get('amount', 0):,.2f}",
-            "Limit": f"${v.get('limit', 0):,.2f}",
-            "Excess": f"${v.get('excess', 0):,.2f}",
+            "Amount": f"₹{v.get('amount', 0):,.2f}",
+            "Limit": f"₹{v.get('limit', 0):,.2f}",
+            "Excess": f"₹{v.get('excess', 0):,.2f}",
             "Severity": v.get('severity', 'medium').upper()
         })
     

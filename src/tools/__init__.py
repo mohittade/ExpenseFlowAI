@@ -36,7 +36,8 @@ from src.tools.pdf_tool import (
 
 from src.tools.email_tool import (
     send_report_email,
-    get_finance_contacts
+    get_finance_contacts,
+    resolve_recipient_contacts
 )
 
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     "generate_expense_report",
     "send_report_email",
     "get_finance_contacts",
+    "resolve_recipient_contacts",
 ]

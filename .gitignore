@@ -52,6 +52,20 @@ Thumbs.db
 *.log
 logs/
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+*.local
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+
+# Root
+package-lock.json
+
 # Reports/Outputs
 *.pdf
 expense_report_*.pdf

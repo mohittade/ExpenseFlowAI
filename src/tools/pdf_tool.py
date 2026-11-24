@@ -12,6 +12,19 @@ from datetime import datetime
 import os
 
 
+def format_date(value: Any) -> str:
+    if not value:
+        return "N/A"
+    try:
+        return datetime.strptime(str(value)[:10], "%Y-%m-%d").strftime("%d %B %Y")
+    except ValueError:
+        return str(value)
+
+
+def format_inr(value: Any) -> str:
+    return f"₹{float(value or 0):,.2f}"
+
+
 def generate_expense_report(
     expenses: List[Dict[str, Any]],
     summary: Dict[str, Any],
@@ -54,7 +67,7 @@ def generate_expense_report(
         textColor=colors.HexColor('#4a4a4a')
     )
     date_range = summary.get("date_range", {})
-    date_str = f"{date_range.get('start', 'N/A')} to {date_range.get('end', 'N/A')}"
+    date_str = f"{format_date(date_range.get('start'))} to {format_date(date_range.get('end'))}"
     story.append(Paragraph(f"Period: {date_str}", subtitle_style))
     story.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", subtitle_style))
     story.append(Paragraph(f"Employee: {employee_name}", subtitle_style))
@@ -66,9 +79,9 @@ def generate_expense_report(
 
     summary_data = [
         ["Metric", "Value"],
-        ["Total Expenses", f"${summary.get('grand_total', 0):,.2f}"],
+        ["Total Expenses", format_inr(summary.get('grand_total', 0))],
         ["Number of Transactions", str(summary.get('expense_count', 0))],
-        ["Date Range", f"{date_range.get('start', 'N/A')} - {date_range.get('end', 'N/A')}"],
+        ["Date Range", f"{format_date(date_range.get('start'))} - {format_date(date_range.get('end'))}"],
     ]
 
     summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
@@ -96,11 +109,11 @@ def generate_expense_report(
             cat_data.append([
                 item["category"],
                 str(item["count"]),
-                f"${item['total']:,.2f}",
+                format_inr(item['total']),
                 f"{item['percentage']:.1f}%"
             ])
         # Add total row
-        cat_data.append(["TOTAL", str(summary.get('expense_count', 0)), f"${summary.get('grand_total', 0):,.2f}", "100.0%"])
+        cat_data.append(["TOTAL", str(summary.get('expense_count', 0)), format_inr(summary.get('grand_total', 0)), "100.0%"])
 
         cat_table = Table(cat_data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
         cat_table.setStyle(TableStyle([
@@ -130,10 +143,10 @@ def generate_expense_report(
         exp_data = [["Date", "Merchant", "Category", "Amount", "Description"]]
         for exp in expenses:
             exp_data.append([
-                exp.get("date", ""),
+                format_date(exp.get("date")),
                 exp.get("merchant", "")[:30],
                 exp.get("category") or "Uncategorized",
-                f"${exp.get('amount', 0):,.2f}",
+                format_inr(exp.get('amount', 0)),
                 (exp.get("description", "") or "")[:40]
             ])
 
@@ -164,12 +177,12 @@ def generate_expense_report(
         viol_data = [["Date", "Merchant", "Category", "Amount", "Limit", "Excess"]]
         for v in policy_violations:
             viol_data.append([
-                v.get("date", ""),
+                format_date(v.get("date")),
                 v.get("merchant", "")[:25],
                 v.get("category", ""),
-                f"${v.get('amount', 0):,.2f}",
-                f"${v.get('limit', 0):,.2f}",
-                f"${v.get('excess', 0):,.2f}"
+                format_inr(v.get('amount', 0)),
+                format_inr(v.get('limit', 0)),
+                format_inr(v.get('excess', 0))
             ])
 
         viol_table = Table(viol_data, colWidths=[1*inch, 1.5*inch, 1.2*inch, 1*inch, 1*inch, 1*inch])
@@ -198,7 +211,7 @@ def generate_expense_report(
         miss_data = [["Date", "Merchant", "Issue", "Details"]]
         for m in missing_data:
             miss_data.append([
-                m.get("date", ""),
+                format_date(m.get("date")),
                 m.get("merchant", "")[:25],
                 m.get("issue", ""),
                 m.get("details", "")[:50]
